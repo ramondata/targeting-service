@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-targeting-service-deployment
+  namespace: toggle-master
+  labels:
+    app: postgres-targeting-service-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-targeting-service-deployment
+  template:
+    metadata:
+      labels:
+        app: postgres-targeting-service-deployment
+    spec:
+      containers:
+      - name: postgres-targeting-service-deployment
+        image: postgres:16-alpine
+        ports:
+        - containerPort: 5432
+        
+        envFrom:
+        - configMapRef:
+            name: targeting-service-config
+        
+        env:
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: targeting-service-secrets
+              key: postgres-password
+        
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+          subPath: postgres
+        - name: postgres-init-sql-targeting-service
+          mountPath: /docker-entrypoint-initdb.d/init.sql
+          subPath: init.sql
+          readOnly: true
+        
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U targeting_user -d targeting_db
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - pg_isready -U targeting_user -d targeting_db
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 5
+          failureThreshold: 3
+        
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
+      
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-pvc-targeting-service
+      - name: postgres-init-sql-targeting-service
+        configMap:
+          name: postgres-init-sql-targeting-service
