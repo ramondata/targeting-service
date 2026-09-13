@@ -42,9 +42,7 @@ def test_rules_without_authorization(client):
     response = client.get("/rules/test-flag")
 
     assert response.status_code == 401
-    assert response.get_json() == {
-        "error": "Authorization header obrigatório"
-    }
+    assert response.get_json() == {"error": "Authorization header obrigatório"}
 
 
 def test_rules_with_invalid_api_key(client):
@@ -62,9 +60,7 @@ def test_rules_with_invalid_api_key(client):
         )
 
     assert response.status_code == 401
-    assert response.get_json() == {
-        "error": "Chave de API inválida"
-    }
+    assert response.get_json() == {"error": "Chave de API inválida"}
 
 
 def test_auth_service_timeout(client):
