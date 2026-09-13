@@ -1,15 +1,22 @@
 import os
+import sys
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 
-# app.py exige essas variáveis durante o import
+# Adiciona a raiz do projeto ao PYTHONPATH
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT))
+
+
+# Variáveis exigidas pelo app.py
 os.environ["DATABASE_URL"] = "postgresql://fake:fake@localhost:5432/fake"
 os.environ["AUTH_SERVICE_URL"] = "http://auth-service"
 
 
-# Evita tentativa real de conexão com PostgreSQL durante o import
+# Evita conexão real com PostgreSQL durante o import
 with patch("psycopg2.pool.SimpleConnectionPool") as mock_pool_class:
     mock_pool_class.return_value = MagicMock()
 
@@ -47,7 +54,7 @@ def test_rules_with_invalid_api_key(client):
     with patch.object(
         app_module.requests,
         "get",
-        return_value=mock_response
+        return_value=mock_response,
     ):
         response = client.get(
             "/rules/test-flag",
