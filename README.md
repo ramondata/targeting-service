@@ -91,3 +91,40 @@ curl -X PUT http://localhost:8003/rules/enable-new-dashboard \
 }'
 ```
 Saída esperada: (O JSON da regra atualizada, com `"value": 75`).
+
+## CI/CD no AWS Academy
+
+O pipeline da branch produtiva `aws-cloud-k8s` autentica com o repository secret
+`AWS_ACADEMY_CREDENTIALS`. Cole o bloco de **AWS Details → AWS CLI**, com
+`aws_access_key_id`, `aws_secret_access_key` e `aws_session_token`.
+O cabeçalho `[default]` é opcional. O secret é configurado neste repositório;
+o secret do auth-service não é compartilhado automaticamente.
+
+O workflow usa `ramondata/CI-reusable-source`, fixado por SHA, no modo Academy.
+As credenciais são validadas e mascaradas, sem assumir uma role via OIDC.
+O código-fonte e a imagem passam pelas verificações antes da publicação no ECR.
+Pull requests executam somente as verificações, sem autenticar na AWS.
+
+| Variável opcional | Valor padrão |
+| --- | --- |
+| `AWS_REGION` | `us-east-1` |
+| `ECR_REPOSITORY` | `toggle-master/targeting-service` |
+| `APP_VERSION` | `v1.0.0` |
+
+O ECR deve existir na conta e região do laboratório. A tag publicada segue
+`APP_VERSION-SHA_CURTO`, por exemplo `v1.0.0-abcdef1`.
+
+A cada reinício do laboratório, substitua o bloco inteiro do secret e use
+**Re-run all jobs** numa execução por push que já contenha esta alteração.
+Alterar o secret não dispara o pipeline. O botão **Run workflow** depende de
+este arquivo também existir na branch padrão do repositório.
+
+### GitOps automático
+
+Após a publicação da imagem, o pipeline atualiza automaticamente o repositório
+existente `ramondata/toggle-master-gitops`. Configure `GITOPS_DEPLOY_KEY` neste
+repositório com uma chave privada autorizada a escrever no GitOps.
+Os pushes fazem rebase e até três tentativas para acomodar atualizações de
+outros serviços na mesma branch sem usar force push.
+O job atualiza repositório e tag em `apps/targeting-service/values.yaml`, na
+`master`. A configuração de ArgoCD e do cluster é uma etapa separada.
