@@ -19,6 +19,7 @@ load_dotenv()
 
 app = Flask(__name__)
 from telemetry import configure  # noqa: E402
+
 configure(app, "targeting-service")
 
 # --- Configuração ---
@@ -67,9 +68,10 @@ def require_auth(f):
         except requests.exceptions.Timeout:
             log.error("Timeout ao conectar com o auth-service")
 
-            return jsonify(
-                {"error": "Serviço de autenticação indisponível (timeout)"}
-            ), 504
+            return (
+                jsonify({"error": "Serviço de autenticação indisponível (timeout)"}),
+                504,
+            )
 
         except requests.exceptions.RequestException as e:
             log.error(f"Erro ao conectar com o auth-service: {e}")
@@ -144,12 +146,15 @@ def create_rule():
 
         log.error(f"Erro ao criar regra: {e}")
 
-        return jsonify(
-            {
-                "error": "Erro interno do servidor",
-                "details": str(e),
-            }
-        ), 500
+        return (
+            jsonify(
+                {
+                    "error": "Erro interno do servidor",
+                    "details": str(e),
+                }
+            ),
+            500,
+        )
 
     finally:
         if cur:
@@ -185,12 +190,15 @@ def get_rule(flag_name):
     except psycopg2.Error as e:
         log.error(f"Erro ao buscar regra '{flag_name}': {e}")
 
-        return jsonify(
-            {
-                "error": "Erro interno do servidor",
-                "details": str(e),
-            }
-        ), 500
+        return (
+            jsonify(
+                {
+                    "error": "Erro interno do servidor",
+                    "details": str(e),
+                }
+            ),
+            500,
+        )
 
     finally:
         if cur:
@@ -221,9 +229,12 @@ def update_rule(flag_name):
         values.append(data["is_enabled"])
 
     if not fields:
-        return jsonify(
-            {"error": ("Pelo menos um campo ('rules', 'is_enabled') é obrigatório")}
-        ), 400
+        return (
+            jsonify(
+                {"error": ("Pelo menos um campo ('rules', 'is_enabled') é obrigatório")}
+            ),
+            400,
+        )
 
     values.append(flag_name)
 
@@ -258,12 +269,15 @@ def update_rule(flag_name):
 
         log.error(f"Erro ao atualizar regra '{flag_name}': {e}")
 
-        return jsonify(
-            {
-                "error": "Erro interno do servidor",
-                "details": str(e),
-            }
-        ), 500
+        return (
+            jsonify(
+                {
+                    "error": "Erro interno do servidor",
+                    "details": str(e),
+                }
+            ),
+            500,
+        )
 
     finally:
         if cur:
@@ -304,12 +318,15 @@ def delete_rule(flag_name):
 
         log.error(f"Erro ao deletar regra '{flag_name}': {e}")
 
-        return jsonify(
-            {
-                "error": "Erro interno do servidor",
-                "details": str(e),
-            }
-        ), 500
+        return (
+            jsonify(
+                {
+                    "error": "Erro interno do servidor",
+                    "details": str(e),
+                }
+            ),
+            500,
+        )
 
     finally:
         if cur:
@@ -322,4 +339,3 @@ def delete_rule(flag_name):
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "8003"))
     app.run(host="0.0.0.0", port=port, debug=False)
-
