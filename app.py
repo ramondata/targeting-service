@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from psycopg2.extras import Json, RealDictCursor
 from psycopg2.pool import SimpleConnectionPool
+
 from telemetry import configure
 
 # Configura o logging
